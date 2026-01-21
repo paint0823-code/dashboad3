@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+<style>
+  body {
+    margin: 0;
+    background: #111;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    text-align: center;
+    padding: 30px 0;
+  }
+
+  /* 時計 */
+  #time {
+    font-size: 72px;
+    font-weight: 200;
+    margin-bottom: 5px;
+  }
+  #date {
+    font-size: 22px;
+    color: #ccc;
+    margin-bottom: 25px;
+  }
+
+  /* セクションカード（Apple風） */
+  .card {
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 20px;
+    width: 85%;
+    margin: 20px auto;
+    backdrop-filter: blur(10px);
+  }
+
+  /* 現在の天気 */
+  #icon-now {
+    width: 90px;
+    height: 90px;
+  }
+  #weather-now {
+    font-size: 28px;
+    margin-top: 10px;
+  }
+
+  /* 週間予報 */
+  .week-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 5px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 20px;
+  }
+  .week-item:last-child {
+    border-bottom: none;
+  }
+  .week-icon {
+    width: 40px;
+    height: 40px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 時計 -->
+<div id="time"></div>
+<div id="date"></div>
+
+<!-- 現在の天気 -->
+<div class="card">
+  <img id="icon-now" src="" alt="">
+  <div id="weather-now">天気を取得中...</div>
+</div>
+
+<!-- 今日・明日 -->
+<div class="card">
+  <div id="today"></div>
+  <img id="icon-today" class="forecast-icon" src="" alt="">
+  <div style="height:15px"></div>
+  <div id="tomorrow"></div>
+  <img id="icon-tomorrow" class="forecast-icon" src="" alt="">
+</div>
+
+<!-- 週間予報 -->
+<div class="card" id="week"></div>
+
+<script>
+// 時計
+function updateTime() {
+  var now = new Date();
+  var h = ("0" + now.getHours()).slice(-2);
+  var m = ("0" + now.getMinutes()).slice(-2);
+  document.getElementById("time").textContent = h + ":" + m;
+
+  var week = ["日","月","火","水","木","金","土"];
+  var dateStr = (now.getMonth()+1) + "月" + now.getDate() + "日 (" + week[now.getDay()] + ")";
+  document.getElementById("date").textContent = dateStr;
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// 天気（One Call API）
+var API_KEY = "669c1ef483ce2b7c3b68ce475259d9a6";  // ←あなたのAPIキー
+var LAT = 34.6913;  // 神戸の緯度
+var LON = 135.1830; // 神戸の経度
+
+function updateWeather() {
+  var url = `https://api.openweathermap.org/data/2.5/onecall?lat=${LAT}&lon=${LON}&appid=${API_KEY}&units=metric&lang=ja`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+
+      // 現在の天気
+      var tempNow = Math.round(data.current.temp);
+      var descNow = data.current.weather[0].description;
+      var iconNow = data.current.weather[0].icon;
+      document.getElementById("icon-now").src =
+        `https://openweathermap.org/img/wn/${iconNow}@2x.png`;
+      document.getElementById("weather-now").textContent =
+        `${tempNow}℃ ${descNow}`;
+
+      // 今日
+      var today = data.daily[0];
+      document.getElementById("today").textContent =
+        `今日: ${Math.round(today.temp.day)}℃ ${today.weather[0].description}`;
+      document.getElementById("icon-today").src =
+        `https://openweathermap.org/img/wn/${today.weather[0].icon}@2x.png`;
+
+      // 明日
+      var tomorrow = data.daily[1];
+      document.getElementById("tomorrow").textContent =
+        `明日: ${Math.round(tomorrow.temp.day)}℃ ${tomorrow.weather[0].description}`;
+      document.getElementById("icon-tomorrow").src =
+        `https://openweathermap.org/img/wn/${tomorrow.weather[0].icon}@2x.png`;
+
+      // 週間予報（7日分）
+      var weekHTML = "";
+      var weekNames = ["日","月","火","水","木","金","土"];
+
+      for (var i = 0; i < 7; i++) {
+        var d = data.daily[i];
+        var date = new Date(d.dt * 1000);
+        var day = weekNames[date.getDay()];
+        var temp = Math.round(d.temp.day);
+        var icon = d.weather[0].icon;
+
+        weekHTML += `
+          <div class="week-item">
+            <div>${day}</div>
+            <img class="week-icon" src="https://openweathermap.org/img/wn/${icon}.png">
+            <div>${temp}℃</div>
+          </div>
+        `;
+      }
+
+      document.getElementById("week").innerHTML = weekHTML;
+
+    })
+    .catch(err => {
+      document.getElementById("weather-now").textContent = "取得失敗";
+      console.error(err);
+    });
+}
+
+updateWeather();
+setInterval(updateWeather, 10 * 60 * 1000);
+</script>
+
+</body>
+</html>
