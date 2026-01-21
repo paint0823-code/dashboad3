@@ -102,13 +102,13 @@ function updateTime() {
 setInterval(updateTime, 1000);
 updateTime();
 
-// 天気（One Call API）
+// 天気（One Call API 3.0）
 var API_KEY = "669c1ef483ce2b7c3b68ce475259d9a6";  // ←あなたのAPIキー
 var LAT = 34.6913;  // 神戸の緯度
 var LON = 135.1830; // 神戸の経度
 
 function updateWeather() {
-  var url = `https://api.openweathermap.org/data/2.5/onecall?lat=${LAT}&lon=${LON}&appid=${API_KEY}&units=metric&lang=ja`;
+  var url = `https://api.openweathermap.org/data/3.0/onecall?lat=${LAT}&lon=${LON}&appid=${API_KEY}&units=metric&lang=ja`;
 
   fetch(url)
     .then(res => res.json())
